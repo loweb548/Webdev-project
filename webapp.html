@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flag Match Game</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #1e1e2f;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin: 20px 0 10px;
+    }
+
+    #moves {
+      margin-bottom: 20px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, 80px);
+      grid-gap: 12px;
+      justify-content: center;
+    }
+
+    .card {
+      width: 80px;
+      height: 80px;
+      background-color: #444;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      cursor: pointer;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.4s;
+    }
+
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card .front, .card .back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+    }
+
+    .card .front {
+      background-color: #888;
+      transform: rotateY(180deg);
+    }
+
+    .card .back {
+      background-color: #1e1e2f;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌍 Flag Match Game</h1>
+  <div id="moves">Moves: 0</div>
+  <div class="board" id="board"></div>
+  <button onclick="startGame()">Restart Game</button>
+
+  <script>
+    const flags = [
+      '🇺🇸','🇬🇧','🇨🇦','🇧🇷','🇫🇷','🇩🇪','🇯🇵','🇮🇳',
+      '🇮🇹','🇲🇽','🇨🇳','🇷🇺','🇰🇷','🇪🇸','🇸🇪','🇳🇱'
+    ];
+    let moves = 0;
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+
+    function startGame() {
+      const board = document.getElementById('board');
+      board.innerHTML = '';
+      moves = 0;
+      document.getElementById('moves').textContent = 'Moves: 0';
+      firstCard = secondCard = null;
+      lockBoard = false;
+
+      const fullSet = [...flags, ...flags]; // 16 pairs = 32 cards
+      shuffle(fullSet);
+
+      fullSet.forEach(flag => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.dataset.flag = flag;
+
+        card.innerHTML = `
+          <div class="front">${flag}</div>
+          <div class="back">❓</div>
+        `;
+
+        card.addEventListener('click', () => flipCard(card));
+        board.appendChild(card);
+      });
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function flipCard(card) {
+      if (lockBoard || card === firstCard || card.classList.contains('matched')) return;
+
+      card.classList.add('flipped');
+
+      if (!firstCard) {
+        firstCard = card;
+      } else {
+        secondCard = card;
+        lockBoard = true;
+        moves++;
+        document.getElementById('moves').textContent = 'Moves: ' + moves;
+        checkForMatch();
+      }
+    }
+
+    function checkForMatch() {
+      const isMatch = firstCard.dataset.flag === secondCard.dataset.flag;
+
+      if (isMatch) {
+        firstCard.classList.add('matched');
+        secondCard.classList.add('matched');
+        resetBoard();
+        checkWin();
+      } else {
+        setTimeout(() => {
+          firstCard.classList.remove('flipped');
+          secondCard.classList.remove('flipped');
+          resetBoard();
+        }, 800);
+      }
+    }
+
+    function resetBoard() {
+      [firstCard, secondCard] = [null, null];
+      lockBoard = false;
+    }
+
+    function checkWin() {
+      const allMatched = document.querySelectorAll('.card:not(.matched)').length === 0;
+      if (allMatched) {
+        setTimeout(() => alert(`🎉 You matched all flags in ${moves} moves!`), 300);
+      }
+    }
+
+    // Start on load
+    startGame();
+  </script>
+</body>
+</html>
